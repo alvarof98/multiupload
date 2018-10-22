@@ -45,7 +45,7 @@ class Multiupload{
     function __construct(){
         foreach($_FILES["archivo"]['tmp_name'] as $atributo => $valor){
           //Da igual de donde cojamos el $atributo, ya que la estructura esta hecha con arrays numéricos en cada elemento del archivo, por lo tanto $atributo será siempre el índice del archivo que estamos subiendo
-          if($_FILES["archivo"]['name'][$atributo] != ''){
+          if($_FILES["archivo"]['name'][$atributo] != '' && $_FILES["archivo"]['error'][$atributo] == 0){
             $archivo = $_FILES["archivo"]['tmp_name'][$atributo];
             $nombre = $_FILES["archivo"]['name'][$atributo];
             $targetFinal = $target . $nombre;
@@ -55,7 +55,7 @@ class Multiupload{
                 echo 'El archivo '.$nombre.' no se ha subido correctamente' . '<br></br>';
             }
           }else{
-            echo 'Error al subir el archivo, no tiene nombre';
+            echo 'Error al subir el archivo, no tiene nombre o contiene un error';
           }
         }
     }
