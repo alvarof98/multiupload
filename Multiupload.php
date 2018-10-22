@@ -44,6 +44,7 @@ class Multiupload{
     //Al iniciar el constructor, recorrer archivo por archivo y subirlo
     function __construct(){
         foreach($_FILES["archivo"]['tmp_name'] as $atributo => $valor){
+          //Da igual de donde cojamos el $atributo, ya que la estructura esta hecha con arrays numéricos en cada elemento del archivo, por lo tanto $atributo será siempre el índice del archivo que estamos subiendo
           if($_FILES["archivo"]['name'][$atributo] != ''){
             $archivo = $_FILES["archivo"]['tmp_name'][$atributo];
             $nombre = $_FILES["archivo"]['name'][$atributo];
