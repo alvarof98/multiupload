@@ -55,7 +55,7 @@ class Multiupload{
                 echo 'El archivo '.$nombre.' no se ha subido correctamente' . '<br></br>';
             }
           }else{
-            echo 'Error al subir el archivo, no existe';
+            echo 'Error al subir el archivo, no tiene nombre';
           }
         }
     }
