@@ -1,62 +1,106 @@
 <?php 
-/*                                 
-                                Estructura de datos del archivo $_FILES, trabajar con esta estructura de datos
-array (
-  'archivo' => 
-  array (
-    'name' => 
-    array (
-      0 => 'AORUS.DAT',
-      1 => 'BSL430.dll',
-    ),
-    'type' => 
-    array (
-      0 => 'application/octet-stream',
-      1 => 'application/x-msdownload',
-    ),
-    'tmp_name' => 
-    array (
-      0 => '/tmp/phpjgC3gc',
-      1 => '/tmp/phpdZzFuq',
-    ),
-    'error' => 
-    array (
-      0 => 0,
-      1 => 0,
-    ),
-    'size' => 
-    array (
-      0 => 55802,
-      1 => 25088,
-    ),
-  ),
-)
-
-*/
-
 class Multiupload{
     
-    private 
-    $archivo,
-    $target = './',
-    $nombre;
-    
-    //Al iniciar el constructor, recorrer archivo por archivo y subirlo
-    function __construct(){
-        foreach($_FILES["archivo"]['tmp_name'] as $atributo => $valor){
-          //Da igual de donde cojamos el $atributo, ya que la estructura esta hecha con arrays numéricos en cada elemento del archivo, por lo tanto $atributo será siempre el índice del archivo que estamos subiendo
-          if($_FILES["archivo"]['name'][$atributo] != '' && $_FILES["archivo"]['error'][$atributo] == 0){
-            $archivo = $_FILES["archivo"]['tmp_name'][$atributo];
-            $nombre = $_FILES["archivo"]['name'][$atributo];
-            $targetFinal = $target . $nombre;
-            if (move_uploaded_file($archivo, $targetFinal)) {
-              echo 'Se ha subido correctamente el archivo '.$nombre . '<br></br>';
-            }else{
-                echo 'El archivo '.$nombre.' no se ha subido correctamente' . '<br></br>';
-            }
-          }else{
-            echo 'Error al subir el archivo, no tiene nombre o contiene un error';
-          }
+    const POLICY_KEEP = 1,
+            POLICY_OVERWRITE = 2,
+            POLICY_RENAME = 3,
+            MIN_OWN_ERROR = 1000;
+
+    private $error = 0,
+            $file,
+            $input,
+            $maxSize = 0,
+            $name,
+            $policy = self::POLICY_OVERWRITE,
+            $target = './';
+
+    function __construct($input) {
+        $this->input = $input;
+      foreach($_FILES[$input]['tmp_name'] as $atributo => $valor){
+        if(isset($_FILES[$input]) && $_FILES[$input]['name'][$atributo] != '') {
+            $this->file = $_FILES[$input];
+        } else {
+            $this->error = 1;
         }
+      }
+    }
+    
+    private function __doUpload() {
+        $result = false;
+        switch($this->policy) {
+            case self::POLICY_KEEP:
+                $result = $this->__doUploadKeep();
+                break;
+            case self::POLICY_OVERWRITE:
+                $result = $this->__doUploadOverwrite();
+                break;
+            case self::POLICY_RENAME:
+                $result = $this->__doUploadRename();
+                break;
+        }
+        return $result;
+    }
+    
+    private function __doUploadKeep(){
+      foreach($this->file['tmp_name'] as $atributo => $valor){
+        $result = false;
+        if(file_exists($this->target . $this->file['name'][$atributo]) === false) {
+            $result = move_uploaded_file($this->file['tmp_name'][$atributo], $this->target . $this->file['name'][$atributo]);
+        }
+      }
+        return $result;
+    }
+    
+    private function __doUploadOverwrite(){
+      foreach($this->file['tmp_name'] as $atributo => $valor){
+        $result = false;
+        $result = move_uploaded_file($this->file['tmp_name'][$atributo], $this->target . $this->file['name'][$atributo]);
+      }
+      return $result;
+    }
+    
+    private function __doUploadRename(){
+      foreach($this->file['tmp_name'] as $atributo => $valor){
+        $result = false;
+        $newName = $this->target . $this->file['name'][$atributo];
+        if(file_exists($newName)) {
+            $newName = self::__getValidName($newName);
+        }
+        $result = move_uploaded_file($this->file['tmp_name'][$atributo], $newName);
+      }
+      return $result;
+    }
+    
+    private static function __getValidName($file) {
+        $parts = pathinfo($file);
+        $cont = 0;
+        while(file_exists($parts['dirname'] . '/' . $parts['filename'] . $cont . '.' . $parts['extension'])) {
+            $cont++;
+        }
+        return $parts['dirname'] . '/' . $parts['filename'] . $cont . '.' . $parts['extension'];
+    }
+
+
+    function setPolicy($policy) {
+        if(is_int($policy) && $policy >= self::POLICY_KEEP && $policy <= self::POLICY_RENAME) {
+            $this->policy = $policy;
+        }
+        return $this;
+    }
+
+    function setTarget($target) {
+        if(is_string($target) && trim($target) !== '') {
+            $this->target = trim($target);
+        }
+        return $this;
+    }
+
+    function upload() {
+        $result = false;
+        if($this->error !== 1) {
+                $this->error = 0;
+                $result = $this->__doUpload();
+        }
+        return $result;
     }
   }
